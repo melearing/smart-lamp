@@ -1,0 +1,400 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              10/15/2018 23:19:31 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Software\Keil\C51\BIN\C51.EXE main.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\L
+                    -istings\main.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          #include <string.h>
+   3          #include "header.h"
+   4          #include <stdlib.h>
+   5          #include "ucharuint.h"
+   6          
+   7          sbit LED0=P1^0;
+   8          sbit LED1=P2^1;
+   9          sbit LED2=P2^2;
+  10          sbit LED3=P2^3;
+  11          sbit LED4=P1^4;
+  12          sbit LED5=P1^5;
+  13          sbit LED6=P1^6;
+  14          sbit LED7=P1^7;
+  15          
+  16          uchar Recive_table[40]="";  //接收缓冲,最大20个字节
+  17          char Recive_state = 0;   //接收完成标志
+  18          char Op=0;
+  19          unsigned char PWM[3]="";//光度信号
+  20          unsigned char ssid[18]="";//WIFIssid号
+  21          unsigned char pwd[18]="";//WIFI密码,
+  22          char RT_state =0;
+  23          uchar sb[1];
+  24          uchar *str1,*str2;
+  25          
+  26          unsigned char toASCII(unsigned char a)
+  27          {
+  28   1          if(a<=9)
+  29   1          {
+  30   2              return a+0x30;
+  31   2          }
+  32   1          else 
+  33   1          {
+  34   2              return a+0x41;
+  35   2          }
+  36   1      }
+  37          
+  38          void empty(char arr[],int len)//清空数组
+  39          {
+  40   1          int i=0;
+  41   1          for(i=0;i<len;i++)
+  42   1          {
+  43   2              arr[i]='\0';
+  44   2          }  
+  45   1      }
+  46          
+  47          void Send_Uart(uchar value)
+  48          {
+  49   1            ES=0;         //关闭串口中断
+  50   1            TI=0;         //清发送完毕中断请求标志位
+  51   1            SBUF=value;     //发送
+  52   1            while(TI==0);   //等待发送完毕
+  53   1            TI=0;         //清发送完毕中断请求标志位
+  54   1            ES=1;         //允许串口中断
+C51 COMPILER V9.59.0.0   MAIN                                                              10/15/2018 23:19:31 PAGE 2   
+
+  55   1      }
+  56          
+  57          void ESP8266_Set(uchar *puf) // 数组指针*puf指向字符串数组               
+  58          {
+  59   1      
+  60   1            while(*puf!='\0')    //遇到空格跳出循环
+  61   1            {
+  62   2                 Send_Uart(*puf);  //向WIFI模块发送控制指令。
+  63   2                 us_delay(5);
+  64   2                 puf++;      
+  65   2            }
+  66   1            us_delay(5);
+  67   1            Send_Uart('\r');//回车
+  68   1            us_delay(5);
+  69   1            Send_Uart('\n');   //换行
+  70   1            ms_delay(1000);
+  71   1      }
+  72          
+  73          void ESP8266_Sent(uchar *puf,uchar i)      // 数组指针*puf指向字符串数组               
+  74          {
+  75   1            uchar send[20]="";
+  76   1            send[0]='A';send[1]='T';send[2]='+';send[3]='C';send[4]='I';send[5]='P';
+  77   1            send[6]='S';send[7]='E';send[8]='N';send[9]='D';send[10]='=';send[12]=',';
+  78   1            send[11]=sb[0];
+  79   1            send[13]=toASCII(i/10); 
+  80   1            send[14]=toASCII(i%10); 
+  81   1            ESP8266_Set(send);
+  82   1       
+  83   1            while(*puf!='\0')    //遇到空格跳出循环
+  84   1            {
+  85   2                 Send_Uart(*puf);   //向WIFI模块发送控制指令。
+  86   2                 us_delay(5);
+  87   2                 puf++;      
+  88   2            }
+  89   1            us_delay(5);
+  90   1            Send_Uart('\n');   //换行
+  91   1            ms_delay(10);
+  92   1      }   
+  93          
+  94          
+  95          /******************************************************************
+  96          函 数: void WIFI_Init(void)
+  97          功 能: wifi初始化(名字：esp8266；密码：1234567890)
+  98          参 数: 无
+  99          返回值: 无
+ 100          *******************************************************************/
+ 101          void WIFI_Init(void)
+ 102          {
+ 103   1      ES = 0;
+ 104   1      TI = 1;  
+ 105   1      
+ 106   1      ESP8266_Set("AT+RST");//重启
+ 107   1      //LED();
+ 108   1        
+ 109   1      ESP8266_Set("AT+CWMODE=2");//
+ 110   1      //LED();
+ 111   1        
+ 112   1      ESP8266_Set("AT+CIPMUX=1");//多连接模式
+ 113   1      //LED(); 
+ 114   1      
+ 115   1      ESP8266_Set("AT+CIPSERVER=1,8080");//服务器端口8080
+ 116   1      //LED();
+C51 COMPILER V9.59.0.0   MAIN                                                              10/15/2018 23:19:31 PAGE 3   
+
+ 117   1      
+ 118   1      //while(!TI);
+ 119   1      //TI = 0;
+ 120   1      ES = 1;
+ 121   1      }
+ 122           
+ 123          int main (void)
+ 124          { 
+ 125   1        unsigned int CYCLE=600,PWM_LOW=0;//定义周期并赋值
+ 126   1      //  unsigned int top=600,p=5;
+ 127   1      /********************功能初始化***********************/
+ 128   1        Uart_Init();
+ 129   1      //串口初始化，波特率为9600
+ 130   1        ms_delay(1000) ;
+ 131   1        WIFI_Init(); //wifi初始化
+ 132   1      /****************************************************/
+ 133   1      
+ 134   1      /**********************主循环************************/
+ 135   1      
+ 136   1      for(;;)
+ 137   1      { 
+ 138   2        int WZ_state= 9;
+ 139   2        ms_delay(1000);
+ 140   2      //  P=(int)PWM;
+ 141   2        
+ 142   2      //  LED0=0;        //点亮LED  
+ 143   2      //  Delay(p);//延时长度，600次循环中从1加至599
+ 144   2      //  LED0=1;        //熄灭LED
+ 145   2      ////  p=atoi(PWM);
+ 146   2      ////ESP8266_Set(PWM);
+ 147   2      //  Delay(top - p);//延时长度，600次循环中从599减至1
+ 148   2            
+ 149   2      //      LED0=1;
+ 150   2      // Delay(60000);        //特意加延时，可以看到熄灭的过程
+ 151   2      // for(PWM_LOW=1;PWM_LOW<CYCLE;PWM_LOW++){ //PWM_LOW表示低
+ 152   2      // //电平时间，这个循环中低电平时长从1累加到CYCLE（周期）的值，即600次
+ 153   2      
+ 154   2            LED0=0;        //点亮LED  
+ 155   2            Delay(PWM_LOW);//延时长度，600次循环中从1加至599
+ 156   2            LED0=1;        //熄灭LED
+ 157   2              Delay(CYCLE-PWM_LOW);//延时长度，600次循环中从599减至1
+ 158   2      //     
+ 159   2      //   }
+ 160   2      // LED0=0;
+ 161   2      // for(PWM_LOW=CYCLE-1;PWM_LOW>0;PWM_LOW--){ //与逐渐变亮相反的过程
+ 162   2      
+ 163   2      //      LED0=0;
+ 164   2      //      Delay(PWM_LOW);
+ 165   2      //      LED0=1;
+ 166   2      //        Delay(CYCLE-PWM_LOW);
+ 167   2      //     
+ 168   2      //   }
+ 169   2      //                     //主循环中添加其他需要一直工作的程序
+ 170   2        
+ 171   2        
+ 172   2          
+ 173   2                                                        
+ 174   2      
+ 175   2        if(Recive_state == 1)
+ 176   2          { LED1=0;//实验
+ 177   3            ES=0;  //清空接收标志位 
+ 178   3            if((Recive_table[0]=='+')&&(Recive_table[1]=='I')&&(Recive_table[2]=='P'))
+C51 COMPILER V9.59.0.0   MAIN                                                              10/15/2018 23:19:31 PAGE 4   
+
+ 179   3      //接收到的字符串形式为+IPD,x,x:y
+ 180   3              {
+ 181   4                if((Recive_table[3]=='D')&&(Recive_table[6]==','))
+ 182   4                  {   
+ 183   5                    sb[0]=Recive_table[5];
+ 184   5                    if(Recive_table[9]==':')
+ 185   5                      WZ_state=10;
+ 186   5                    
+ 187   5                    if(Recive_table[WZ_state]=='0')
+ 188   5                      {
+ 189   6                        ESP8266_Sent("Reboot soon",11);
+ 190   6                        WIFI_Init();
+ 191   6                      }
+ 192   5                    else if(Recive_table[WZ_state]=='1')
+ 193   5                      {   //LED2=0;//实验
+ 194   6                        LED1 = 0;
+ 195   6                        //PWM_LOW=1;
+ 196   6                        //empty(Recive_table,40);//修改1，清空--无效
+ 197   6                        
+ 198   6                        ESP8266_Sent("OPEN",4);
+ 199   6      //                  ESP8266_Sent("OPPEN_1",7);
+ 200   6                      }
+ 201   5                    else if(Recive_table[WZ_state]=='2')
+ 202   5                      {
+ 203   6                        LED1 = 1;
+ 204   6                        //ESP8266_Sent("CLOSE_1",7);
+ 205   6                        //PWM_LOW=100;
+ 206   6                        ESP8266_Sent("CLOSE",5);
+ 207   6                        //PWM_LOW=100;
+ 208   6                      }
+ 209   5                    else if(Recive_table[WZ_state]=='3')
+ 210   5                      {
+ 211   6                        //LED5 = 0;
+ 212   6                        //ESP8266_Sent("OPPEN_2",7);
+ 213   6                        PWM_LOW=300;
+ 214   6                        ESP8266_Sent("OK_3",4);
+ 215   6                      }
+ 216   5                    else if(Recive_table[WZ_state]=='4')
+ 217   5                      {
+ 218   6                        //LED5 = 1;
+ 219   6                        //ESP8266_Sent("CLOSE_2",7);
+ 220   6                      PWM_LOW=400;
+ 221   6                        ESP8266_Sent("OK_4",4);
+ 222   6                        
+ 223   6                        
+ 224   6                      }
+ 225   5      //              else if(Recive_table[WZ_state]=='6')
+ 226   5      //                {
+ 227   5      //                  //LED6 = 0;
+ 228   5      //                  //ESP8266_Sent("OPPEN_3",7);
+ 229   5      //                  PWM_LOW=599;
+ 230   5      //                  ESP8266_Sent("OK_2",5);
+ 231   5      //                  
+ 232   5      //                }
+ 233   5      //              else if(Recive_table[WZ_state]=='6')
+ 234   5      //                {
+ 235   5      //                  LED1 = 1;
+ 236   5      //                  //ESP8266_Sent("CLOSE",5);
+ 237   5      //                  //PWM_LOW=0;
+ 238   5      //                  ESP8266_Sent("CLOSE",5);
+ 239   5      //                  
+ 240   5      //                }
+C51 COMPILER V9.59.0.0   MAIN                                                              10/15/2018 23:19:31 PAGE 5   
+
+ 241   5                    
+ 242   5      //                else if((Recive_table[WZ_state]=='4')&&(Recive_table[WZ_state+1]=='1'))
+ 243   5      //                {
+ 244   5      //                  //LED7 = 0;
+ 245   5      //                  //ESP8266_Sent("OPPEN_4",7);
+ 246   5      //                  ESP8266_Sent("OK",2);
+ 247   5      //                  PWM_LOW=600;
+ 248   5      //                }
+ 249   5      //              else if((Recive_table[WZ_state]=='4')&&(Recive_table[WZ_state+1]=='0'))
+ 250   5      //                {
+ 251   5      //                  //LED7 = 1;
+ 252   5      //                  //ESP8266_Sent("CLOSE_4",7);
+ 253   5      //                  ESP8266_Sent("RECOVER",7);
+ 254   5      //                  PWM_LOW=500;
+ 255   5      //                }
+ 256   5      
+ 257   5      //              else if(Recive_table[WZ_state]=='5')
+ 258   5      //                { LED3=0;//实验
+ 259   5      //                  int ss=WZ_state+1;
+ 260   5      //                  empty(PWM,3);   
+ 261   5      //                  if(Recive_table[WZ_state+1]=='+')             //检测开始标志位"+"
+ 262   5      //                  {
+ 263   5      //                      while(Recive_table[++ss]!='+')            //检测ssid读取结束标志位
+ 264   5      //                      {
+ 265   5      //                        PWM[ss-(WZ_state+2)]=Recive_table[ss];  //把ssid装进ssid[]数组
+ 266   5      //                      }                     
+ 267   5      //                      PWM_LOW[0]=(PWM[0]-0x30)*100+(PWM[1]-0x30)*10+(PWM[2]-0x30);                      
+ 268   5      //                      ESP8266_Sent("OK",2);
+ 269   5      //                  }else
+ 270   5      //                  ESP8266_Sent("5+PWM+",6);               //返回提示格式信息    
+ 271   5      //                }               
+ 272   5                      else if(Recive_table[WZ_state]=='5')            //6+ssid+pwd+
+ 273   5                      {
+ 274   6                        uchar index = 9;
+ 275   6                        int ss=WZ_state+1,pp=0;
+ 276   6                        empty(ssid,18);                               //清空数组
+ 277   6                        empty(pwd,18);                                //清空数组
+ 278   6                        if(Recive_table[WZ_state+1]=='+')             //检测开始标志位"+"
+ 279   6                        {
+ 280   7                            while(Recive_table[++ss]!='+')            //检测ssid读取结束标志位
+ 281   7                            {
+ 282   8                              ssid[ss-(WZ_state+2)]=Recive_table[ss]; //把ssid装进ssid[]数组
+ 283   8                            }                         
+ 284   7                            str1=ssid;
+ 285   7                            pp=ss;
+ 286   7                            while(Recive_table[++ss]!='+')            //检测pwd读取结束标志位
+ 287   7                            {
+ 288   8                              pwd[ss-(pp+1)]=Recive_table[ss];        //把密码装进pwd[]数组
+ 289   8                            }
+ 290   7                            str2=pwd;                   
+ 291   7                            ESP8266_Set("AT+CWMODE=1");               //发送改变到Station模式命令
+ 292   7                            empty(Recive_table,40);                   //清空数组
+ 293   7                                                                      //把AT+CWJAP="装进数组
+ 294   7                            Recive_table[0]='A';Recive_table[1]='T';Recive_table[2]='+';
+ 295   7                            Recive_table[3]='C';Recive_table[4]='W';Recive_table[5]='J';
+ 296   7                            Recive_table[6]='A';Recive_table[7]='P';Recive_table[8]='=';Recive_table[9]='\"';
+ 297   7                            while(*str1 != '\0')                      //把ssid装进数组
+ 298   7                            {
+ 299   8                              Recive_table[++index] = *str1;
+ 300   8                              str1++;   
+ 301   8                            }
+ 302   7                            Recive_table[++index] ='\"';
+C51 COMPILER V9.59.0.0   MAIN                                                              10/15/2018 23:19:31 PAGE 6   
+
+ 303   7                            Recive_table[++index] =',';
+ 304   7                            Recive_table[++index] ='\"';
+ 305   7                              while(*str2 != '\0')                    //把pwd装进数组
+ 306   7                            {
+ 307   8                              Recive_table[++index] = *str2;
+ 308   8                              str2++;   
+ 309   8                            }
+ 310   7                            Recive_table[++index] ='\"';
+ 311   7                            ESP8266_Set(Recive_table);                //把拼接好的命令数组发送出去
+ 312   7                        }else
+ 313   6                        ESP8266_Sent("6+ssid+pwd+",11);               //返回提示格式信息      
+ 314   6                      }
+ 315   5                    else if(Recive_table[WZ_state]=='8')
+ 316   5                      {
+ 317   6                        LED4 = LED5 =LED6 =LED7 =1;
+ 318   6                        ESP8266_Sent("CLOSE_ALL",9);
+ 319   6                      }
+ 320   5                    else if(Recive_table[WZ_state]=='9')
+ 321   5                      {
+ 322   6                        LED4 = LED5 =LED6 =LED7 =0;
+ 323   6                        ESP8266_Sent("OPPEN_ALL",9);
+ 324   6                      }
+ 325   5                    else 
+ 326   5                      {
+ 327   6                        ESP8266_Sent("ERROR",5);
+ 328   6                      }
+ 329   5                  }
+ 330   4              }
+ 331   3            empty(Recive_table,40);
+ 332   3      
+ 333   3            Recive_state = 0;
+ 334   3            ES=1;  //打开接收标志位
+ 335   3            /*LED4=0;
+ 336   3             while(1);//实验*/
+ 337   3          }
+ 338   2        }
+ 339   1      }
+ 340          
+ 341          
+ 342          /******************************************************************
+ 343          函 数: void Uart_Interrupt() interrupt 4
+ 344          功 能: 串口中断函数,将收到的字符存到Recive_table[]数组中
+ 345          参 数: 无
+ 346          返回值: 无
+ 347          *******************************************************************/
+ 348          
+ 349          
+ 350          void Uart_Interrupt() interrupt 4         
+ 351          {     
+ 352   1        static char i=0; 
+ 353   1        ES = 0;
+ 354   1        RI=0;        
+ 355   1        Recive_table[i]=SBUF;        
+ 356   1        i++; 
+ 357   1        if((Recive_table[i-1] == '\n')||(i==39))
+ 358   1        { 
+ 359   2          Recive_table[i]='\0';
+ 360   2          i=0; 
+ 361   2        }
+ 362   1        Recive_state = 1;
+ 363   1        ES = 1;       
+ 364   1      } 
+C51 COMPILER V9.59.0.0   MAIN                                                              10/15/2018 23:19:31 PAGE 7   
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1515    ----
+   CONSTANT SIZE    =    154    ----
+   XDATA SIZE       =     90      43
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

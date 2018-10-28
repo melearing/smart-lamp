@@ -1,0 +1,6 @@
+".\Objects\STARTUP.obj",
+".\Objects\main.obj",
+".\Objects\wifi.obj",
+".\Objects\usart.obj" 
+TO ".\Objects\51dd" 
+PRINT(".\Listings\51dd.m51") RAMSIZE(256) 

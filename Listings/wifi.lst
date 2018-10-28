@@ -1,0 +1,65 @@
+C51 COMPILER V9.59.0.0   WIFI                                                              10/15/2018 23:19:31 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE WIFI
+OBJECT MODULE PLACED IN .\Objects\wifi.obj
+COMPILER INVOKED BY: D:\Software\Keil\C51\BIN\C51.EXE wifi.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\L
+                    -istings\wifi.lst) TABS(2) OBJECT(.\Objects\wifi.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          #include "ucharuint.h"
+   3          
+   4          
+   5          /******************************************************************
+   6          函 数: void ms_delay(int t)/us_delay(uchar t)
+   7          功 能: 毫秒级延时
+   8          参 数: 无
+   9          返回值: 无
+  10          *******************************************************************/
+  11          void ms_delay(int t) 
+  12          {  
+  13   1        int i,j; 
+  14   1          for(i=t;i>0;i--)   
+  15   1        for(j=110;j>0;j--); 
+  16   1      }
+  17          void us_delay(uchar t)
+  18          {
+  19   1            while(t--);
+  20   1      }
+  21          
+  22          void Delay(unsigned int t)
+  23          {
+  24   1       while(--t);
+  25   1      }
+  26          ///******************************************************************
+  27          //函 数: void LED(void)
+  28          //功 能: 发送完命令后显示用的函数
+  29          //参 数: 无
+  30          //返回值: 无
+  31          //*******************************************************************/
+  32          //void LED(void)
+  33          //{
+  34          //  P1 = 0;
+  35          //  ms_delay(100);
+  36          //  P1 = 0xff;
+  37          //  ms_delay(100);
+  38          //}
+  39          
+  40          
+  41          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     49    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,137 @@
+C51 COMPILER V9.56.0.0   TEMP                                                              05/02/2018 20:39:11 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE TEMP
+OBJECT MODULE PLACED IN .\Objects\temp.obj
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE temp.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\t
+                    -emp.lst) TABS(2) OBJECT(.\Objects\temp.obj)
+
+line level    source
+
+*** WARNING C500 IN LINE 1 OF temp.c: LICENSE ERROR (R230(2): CONNECT TO UVISION KERNEL FAILED)
+
+   1          //#include <reg52.h>
+   2          //#include "ucharuint.h"
+   3          
+   4          //sbit DS=P2^2;           //定义中总线
+   5          //uint temp;             // 温度变量
+   6          //void delay(uint count)      //delay
+   7          //{
+   8          //  uint i;
+   9          //  while(count)
+  10          //  {
+  11          //    i=200;
+  12          //    while(i>0)
+  13          //    i--;
+  14          //    count--;
+  15          //  }
+  16          //}
+  17          
+  18          
+  19          //void dsreset(void)       //发送复位和初始化
+  20          //{
+  21          //  uint i;
+  22          //  DS=0;                 
+  23          //  i=103;           //将总线拉低480us~960us
+  24          //  while(i>0)i--;
+  25          //  DS=1;            //然后拉高总线，若DS18B20做出反应会将在15us~60us后将总线拉低
+  26          //  i=4;             //15us~60us等待
+  27          //  while(i>0)i--;
+  28          //  //while(DS);
+  29          //}
+  30          
+  31          //bit tmpreadbit(void)       //读取一个位数据
+  32          //{
+  33          //   uint i;
+  34          //   bit dat;
+  35          //   DS=0;i++;          //i++ for delay
+  36          //   DS=1;i++;i++;
+  37          //   dat=DS;
+  38          //   i=8;while(i>0)i--;
+  39          //   return (dat);
+  40          //}
+  41          
+  42          //uchar tmpread(void)   //读取一个字节数据
+  43          //{
+  44          //  uchar i,j,dat;
+  45          //  dat=0;
+  46          //  for(i=1;i<=8;i++)
+  47          //  {
+  48          //    j=tmpreadbit();
+  49          //    dat=(j<<7)|(dat>>1);   //读出的数据最低位在最前面，这样刚好一个字节在DAT里
+  50          //  }
+  51          //  return(dat);
+  52          //}
+  53          
+C51 COMPILER V9.56.0.0   TEMP                                                              05/02/2018 20:39:11 PAGE 2   
+
+  54          //void tmpwritebyte(uchar dat)   //写入一个字节数据
+  55          //{
+  56          //  uint i;
+  57          //  uchar j;
+  58          //  bit testb;
+  59          //  for(j=1;j<=8;j++)
+  60          //  {
+  61          //    testb=dat&0x01;
+  62          //    dat=dat>>1;
+  63          //    if(testb)     //write 1
+  64          //    {
+  65          //      DS=0;
+  66          //      i++;i++;
+  67          //      DS=1;
+  68          //      i=8;while(i>0)i--;
+  69          //    }
+  70          //    else
+  71          //    {
+  72          //      DS=0;       //write 0
+  73          //      i=8;while(i>0)i--;
+  74          //      DS=1;
+  75          //      i++;i++;
+  76          //    }
+  77          
+  78          //  }
+  79          //}
+  80          
+  81          //void tmpchange(void)  //18b20开始转换温度
+  82          //{
+  83          //  dsreset();
+  84          //  delay(1);
+  85          //  tmpwritebyte(0xcc);  // 跳过ROM指令
+  86          //  tmpwritebyte(0x44);  //  启动温度读取指令
+  87          //  //delay(100);
+  88          //}
+  89          
+  90          //uint tmp()               //读取温度
+  91          //{
+  92          //  float tt;
+  93          //  uchar a,b;
+  94          //  dsreset();
+  95          //  delay(1);
+  96          //  tmpwritebyte(0xcc);
+  97          //  tmpwritebyte(0xbe);
+  98          //  a=tmpread();
+  99          //  b=tmpread();
+ 100          //  temp=b;
+ 101          //  temp<<=8;             //将高低温两个直接组成一个
+ 102          //  temp=temp|a;
+ 103          //  tt=temp*0.0625;
+ 104          //  temp=tt*10+0.5;
+ 105          //  return temp;
+ 106          //}
+ 107          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+C51 COMPILER V9.56.0.0   TEMP                                                              05/02/2018 20:39:11 PAGE 3   
+
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
